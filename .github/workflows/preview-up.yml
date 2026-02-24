@@ -1,0 +1,121 @@
+name: Preview Up
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "PR number"
+        required: true
+        type: string
+      sha:
+        description: "Commit SHA"
+        required: true
+        type: string
+      branch:
+        description: "Branch name"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  deployments: write
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 1
+        continue-on-error: true
+        id: checkout
+
+      - name: Create gh-pages branch if missing
+        if: steps.checkout.outcome == 'failure'
+        run: |
+          git checkout --orphan gh-pages
+          git rm -rf . || true
+          echo "# GitHub Pages" > index.html
+          git add index.html
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "Initialize gh-pages branch"
+
+      - name: Generate preview page
+        run: |
+          mkdir -p previews/pr-${{ inputs.pr }}
+          cat > previews/pr-${{ inputs.pr }}/index.html << 'HEREDOC'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Preview - PR #PREVIEW_PR</title>
+            <style>
+              body { font-family: system-ui, sans-serif; max-width: 600px; margin: 4rem auto; padding: 0 1rem; }
+              h1 { color: #333; }
+              dl { line-height: 1.8; }
+              dt { font-weight: bold; color: #555; }
+              dd { margin-left: 1rem; font-family: monospace; }
+            </style>
+          </head>
+          <body>
+            <h1>Hello World</h1>
+            <p>Preview deployment for PR #PREVIEW_PR</p>
+            <dl>
+              <dt>PR</dt><dd>PREVIEW_PR</dd>
+              <dt>Branch</dt><dd>PREVIEW_BRANCH</dd>
+              <dt>SHA</dt><dd>PREVIEW_SHA</dd>
+              <dt>Timestamp</dt><dd>PREVIEW_TIMESTAMP</dd>
+            </dl>
+          </body>
+          </html>
+          HEREDOC
+
+          # Replace placeholders
+          sed -i "s|PREVIEW_PR|${{ inputs.pr }}|g" previews/pr-${{ inputs.pr }}/index.html
+          sed -i "s|PREVIEW_BRANCH|${{ inputs.branch }}|g" previews/pr-${{ inputs.pr }}/index.html
+          sed -i "s|PREVIEW_SHA|${{ inputs.sha }}|g" previews/pr-${{ inputs.pr }}/index.html
+          sed -i "s|PREVIEW_TIMESTAMP|$(date -u +%Y-%m-%dT%H:%M:%SZ)|g" previews/pr-${{ inputs.pr }}/index.html
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add previews/pr-${{ inputs.pr }}/
+          git commit -m "Deploy preview for PR #${{ inputs.pr }}" --allow-empty
+          git push origin gh-pages
+
+      - name: Create deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const environment = `preview/pr-${{ inputs.pr }}`;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const environmentUrl = `https://${owner}.github.io/${repo}/previews/pr-${{ inputs.pr }}/`;
+
+            const deployment = await github.rest.repos.createDeployment({
+              owner,
+              repo,
+              ref: '${{ inputs.sha }}',
+              environment,
+              transient_environment: true,
+              auto_merge: false,
+              required_contexts: [],
+              description: `Preview for PR #${{ inputs.pr }}`
+            });
+
+            await github.rest.repos.createDeploymentStatus({
+              owner,
+              repo,
+              deployment_id: deployment.data.id,
+              state: 'success',
+              environment_url: environmentUrl,
+              description: 'Preview deployed successfully'
+            });
+
+            core.info(`Preview deployed to ${environmentUrl}`);
