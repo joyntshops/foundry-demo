@@ -105,7 +105,6 @@ jobs:
             -F auto_merge=false \
             -F transient_environment=true \
             -F production_environment=false \
-            -F required_contexts='[]' \
             --jq '.id')
           echo "deployment_id=${DEPLOYMENT_ID}" >> "$GITHUB_OUTPUT"
 
