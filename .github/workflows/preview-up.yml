@@ -61,7 +61,7 @@ jobs:
 
           # Read template from the repo (default branch) via GitHub API
           # NOTE: set TEMPLATE_PATH to wherever you put it
-          TEMPLATE_PATH="preview/index.html"
+          TEMPLATE_PATH="index.html"
           TEMPLATE_REF="${BRANCH}"   # or change to your default branch, e.g. "main"
 
           gh api \
