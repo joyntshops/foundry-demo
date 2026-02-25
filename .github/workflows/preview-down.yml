@@ -1,0 +1,72 @@
+name: Preview Down
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Pull request number"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  deployments: write
+
+jobs:
+  teardown-preview:
+    runs-on: ubuntu-latest
+    env:
+      PR_ID: ${{ github.event.inputs.pr }}
+      PREVIEW_DIR: previews/pr-${{ github.event.inputs.pr }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout gh-pages branch
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+
+          if git ls-remote --exit-code --heads "${REMOTE}" gh-pages; then
+            git clone --branch gh-pages --single-branch "${REMOTE}" gh-pages-dir
+          else
+            echo "gh-pages branch does not exist. Nothing to delete."
+            exit 0
+          fi
+
+      - name: Delete preview directory
+        run: |
+          cd gh-pages-dir
+          if [ -d "${PREVIEW_DIR}" ]; then
+            git rm -rf "${PREVIEW_DIR}"
+            git commit -m "preview: teardown PR #${PR_ID}"
+            git push origin gh-pages
+          else
+            echo "Preview directory ${PREVIEW_DIR} not found. Nothing to remove."
+          fi
+
+      - name: Deactivate deployments
+        run: |
+          ENVIRONMENT="preview/pr-${PR_ID}"
+
+          DEPLOYMENT_IDS=$(gh api \
+            --method GET \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${{ github.repository }}/deployments?environment=${ENVIRONMENT}&per_page=100" \
+            --jq '.[].id')
+
+          if [ -z "$DEPLOYMENT_IDS" ]; then
+            echo "No deployments found for environment: ${ENVIRONMENT}"
+            exit 0
+          fi
+
+          for DEPLOYMENT_ID in $DEPLOYMENT_IDS; do
+            echo "Setting deployment ${DEPLOYMENT_ID} to inactive..."
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${{ github.repository }}/deployments/${DEPLOYMENT_ID}/statuses" \
+              -f state="inactive" \
+              -f description="Preview removed for PR #${PR_ID}"
+          done
