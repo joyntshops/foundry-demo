@@ -47,7 +47,7 @@ agent_label_map:
 github_backend: octokit
 preview:
   mode: "provider"                        # "template" = URL from config, "provider" = URL from command output
-  url_template: https://joyntshops.github.io/foundry-demo/previews/pr-{pr}/   # URL template
+  url_template: https://joyntshops.github.io/foundry-demo/previews/pr-{pr_number}/   # URL template
   up_command:  "gh workflow run preview-up.yml -f pr={pr_number} -f sha={sha} -f branch={branch}" # mode:provider — deploy command
   down_command: "gh workflow run preview-down.yml -f pr={pr_number}"  # mode:provider — teardown command
   comment: true    

@@ -3,7 +3,7 @@ name: Preview Down
 on:
   workflow_dispatch:
     inputs:
-      pr_number:
+      pr:
         description: "Pull request number"
         required: true
         type: string
@@ -16,8 +16,8 @@ jobs:
   teardown-preview:
     runs-on: ubuntu-latest
     env:
-      PR_ID: ${{ github.event.inputs.pr_number }}
-      PREVIEW_DIR: previews/pr-${{ github.event.inputs.pr_number }}
+      PR_ID: ${{ github.event.inputs.pr }}
+      PREVIEW_DIR: previews/pr-${{ github.event.inputs.pr }}
       GH_TOKEN: ${{ github.token }}
 
     steps:
