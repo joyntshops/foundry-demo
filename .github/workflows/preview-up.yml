@@ -64,6 +64,18 @@ jobs:
           <head><meta charset="UTF-8"><title>Preview PR #${PR_ID}</title></head>
           <body>
             <h1>Hello World</h1>
+            <ul>
+              <li>Hello World <em>(English)</em></li>
+              <li>Hola Mundo <em>(Spanish)</em></li>
+              <li>Bonjour le Monde <em>(French)</em></li>
+              <li>Hallo Welt <em>(German)</em></li>
+              <li>Ciao Mondo <em>(Italian)</em></li>
+              <li>Olá Mundo <em>(Portuguese)</em></li>
+              <li>こんにちは世界 <em>(Japanese)</em></li>
+              <li>你好世界 <em>(Chinese)</em></li>
+              <li>안녕하세요 세계 <em>(Korean)</em></li>
+              <li>Привет мир <em>(Russian)</em></li>
+            </ul>
             <p><strong>PR:</strong> #${PR_ID}</p>
             <p><strong>Branch:</strong> ${BRANCH}</p>
             <p><strong>SHA:</strong> ${DEPLOY_SHA}</p>
