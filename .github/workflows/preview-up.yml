@@ -1,0 +1,109 @@
+name: Preview Up
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Pull request number"
+        required: true
+        type: string
+      sha:
+        description: "Commit SHA to deploy"
+        required: true
+        type: string
+      branch:
+        description: "Source branch name"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  deployments: write
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    env:
+      PR_ID: ${{ github.event.inputs.pr }}
+      DEPLOY_SHA: ${{ github.event.inputs.sha }}
+      BRANCH: ${{ github.event.inputs.branch }}
+      PREVIEW_DIR: previews/pr-${{ github.event.inputs.pr }}
+      PREVIEW_URL: https://joyntshops.github.io/foundry-demo/previews/pr-${{ github.event.inputs.pr }}/
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout gh-pages branch (create if missing)
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+
+          if git ls-remote --exit-code --heads "${REMOTE}" gh-pages; then
+            git clone --branch gh-pages --single-branch "${REMOTE}" gh-pages-dir
+          else
+            mkdir gh-pages-dir
+            cd gh-pages-dir
+            git init
+            git remote add origin "${REMOTE}"
+            git checkout --orphan gh-pages
+            echo "<html><body><h1>Foundry Previews</h1></body></html>" > index.html
+            git add index.html
+            git commit -m "chore: initialize gh-pages branch"
+          fi
+
+      - name: Write preview files
+        run: |
+          cd gh-pages-dir
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          mkdir -p "${PREVIEW_DIR}"
+          cat > "${PREVIEW_DIR}/index.html" <<HTML
+          <!DOCTYPE html>
+          <html lang="en">
+          <head><meta charset="UTF-8"><title>Preview PR #${PR_ID}</title></head>
+          <body>
+            <h1>Hello World</h1>
+            <p><strong>PR:</strong> #${PR_ID}</p>
+            <p><strong>Branch:</strong> ${BRANCH}</p>
+            <p><strong>SHA:</strong> ${DEPLOY_SHA}</p>
+            <p><strong>Deployed:</strong> ${TIMESTAMP}</p>
+          </body>
+          </html>
+          HTML
+
+      - name: Commit and push to gh-pages
+        run: |
+          cd gh-pages-dir
+          git add "${PREVIEW_DIR}/"
+          if git diff --cached --quiet; then
+            echo "No changes to commit (idempotent re-deploy)"
+          else
+            git commit -m "preview: deploy PR #${PR_ID} @ ${DEPLOY_SHA}"
+          fi
+          git push origin gh-pages
+
+      - name: Create GitHub Deployment
+        id: create_deployment
+        run: |
+          DEPLOYMENT_ID=$(gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${{ github.repository }}/deployments" \
+            -f ref="${DEPLOY_SHA}" \
+            -f environment="preview/pr-${PR_ID}" \
+            -f description="PR #${PR_ID} preview deployment" \
+            -F auto_merge=false \
+            -F required_contexts='[]' \
+            --jq '.id')
+          echo "deployment_id=${DEPLOYMENT_ID}" >> "$GITHUB_OUTPUT"
+
+      - name: Set Deployment Status to Success
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${{ github.repository }}/deployments/${{ steps.create_deployment.outputs.deployment_id }}/statuses" \
+            -f state="success" \
+            -f environment_url="${PREVIEW_URL}" \
+            -f description="Preview available at ${PREVIEW_URL}"
