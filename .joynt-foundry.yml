@@ -45,3 +45,7 @@ agent_backends:
 agent_label_map:
   agent:claude: claude-code
 github_backend: octokit
+preview:
+  mode: "template"                        # "template" = URL from config, "provider" = URL from command output
+  url_template: "https://joyntshops.github.io/foundry-demo/previews/pr-{issue}/"   # URL template
+  comment: true                           # Post/update PR comment (default true)
