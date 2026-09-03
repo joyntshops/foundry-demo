@@ -1,0 +1,77 @@
+# Foundry: GitHub Issues → coding agent → verified PR into `integration`.
+#
+# Every run is one GitHub event. Foundry reads the event, rebuilds task state
+# from the issue (labels + claim comment), performs the transition, and exits.
+# State lives on GitHub, not on any machine.
+#
+# Secrets this workflow needs:
+#   FOUNDRY_APP_ID / FOUNDRY_APP_PRIVATE_KEY  GitHub App with issues, pull_requests,
+#                                              contents, actions, deployments: write.
+#                                              Foundry's writes must come from an App so
+#                                              they trigger the next run (GITHUB_TOKEN
+#                                              writes never do).
+#   CLAUDE_CODE_OAUTH_TOKEN                    from `claude setup-token`; bills your plan.
+name: Foundry
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [closed]
+  pull_request_review:
+    types: [submitted]
+
+# One job at a time per issue. A second event for the same issue waits.
+concurrency:
+  group: foundry-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  foundry:
+    # Start a runner only for events Foundry acts on.
+    if: >-
+      (github.event_name == 'issues' &&
+        (github.event.label.name == 'state:ready' || github.event.label.name == 'state:claim')) ||
+      (github.event_name == 'issue_comment' &&
+        contains(github.event.comment.body, '@foundry') &&
+        !endsWith(github.event.comment.user.login, '[bot]')) ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
+      (github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Mint GitHub App token
+        id: app
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.FOUNDRY_APP_ID }}
+          private-key: ${{ secrets.FOUNDRY_APP_PRIVATE_KEY }}
+
+      # Full history so origin/integration exists for worktrees and diffs.
+      # The App token is persisted for git, so pushes are made as the App.
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app.outputs.token }}
+          fetch-depth: 0
+
+      - name: Foundry
+        id: foundry
+        uses: joyntshops/foundry@feat/github-action
+        with:
+          github-token: ${{ steps.app.outputs.token }}
+          claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+      - name: Keep the agent transcript
+        if: always() && steps.foundry.outputs.log-dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundry-issue-${{ steps.foundry.outputs.issue }}-run-${{ github.run_id }}
+          path: ${{ steps.foundry.outputs.log-dir }}
+          if-no-files-found: ignore
+          retention-days: 30
