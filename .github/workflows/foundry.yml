@@ -4,13 +4,12 @@
 # from the issue (labels + claim comment), performs the transition, and exits.
 # State lives on GitHub, not on any machine.
 #
-# Secrets this workflow needs:
-#   FOUNDRY_APP_ID / FOUNDRY_APP_PRIVATE_KEY  GitHub App with issues, pull_requests,
-#                                              contents, actions, deployments: write.
-#                                              Foundry's writes must come from an App so
-#                                              they trigger the next run (GITHUB_TOKEN
-#                                              writes never do).
-#   CLAUDE_CODE_OAUTH_TOKEN                    from `claude setup-token`; bills your plan.
+# The only secret this workflow needs:
+#   CLAUDE_CODE_OAUTH_TOKEN   from `claude setup-token`; bills your Claude plan.
+#
+# GitHub access uses the job's built-in token with the permissions below. No
+# GitHub App is required. (Pass an App installation token as `github-token` if
+# you later want CI to run on the PRs Foundry opens, or a named bot identity.)
 name: Foundry
 
 on:
@@ -29,7 +28,11 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write        # push branches
+  issues: write          # labels, claim/status comments
+  pull-requests: write   # open PRs, PR comments
+  actions: write         # gh workflow run preview-up.yml / preview-down.yml
+  deployments: write     # GitHub Deployment records for previews
 
 jobs:
   foundry:
@@ -46,25 +49,15 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - name: Mint GitHub App token
-        id: app
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.FOUNDRY_APP_ID }}
-          private-key: ${{ secrets.FOUNDRY_APP_PRIVATE_KEY }}
-
       # Full history so origin/integration exists for worktrees and diffs.
-      # The App token is persisted for git, so pushes are made as the App.
       - uses: actions/checkout@v4
         with:
-          token: ${{ steps.app.outputs.token }}
           fetch-depth: 0
 
       - name: Foundry
         id: foundry
         uses: joyntshops/foundry@feat/github-action
         with:
-          github-token: ${{ steps.app.outputs.token }}
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
       - name: Keep the agent transcript
