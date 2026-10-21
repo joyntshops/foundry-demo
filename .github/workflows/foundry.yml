@@ -36,13 +36,19 @@ permissions:
 
 jobs:
   foundry:
-    # Start a runner only for events Foundry acts on.
+    # Start a runner only for events Foundry acts on. A plain human comment
+    # counts when the agent is waiting on one (waiting-for-input / plan-review).
+    # Comments on pull requests are excluded: they carry the PR number, not the
+    # issue, and are not resolved yet.
     if: >-
       (github.event_name == 'issues' &&
         (github.event.label.name == 'state:ready' || github.event.label.name == 'state:claim')) ||
       (github.event_name == 'issue_comment' &&
-        contains(github.event.comment.body, '@foundry') &&
-        !endsWith(github.event.comment.user.login, '[bot]')) ||
+        !endsWith(github.event.comment.user.login, '[bot]') &&
+        !github.event.issue.pull_request &&
+        (contains(github.event.comment.body, '@foundry') ||
+         contains(github.event.issue.labels.*.name, 'state:waiting-for-input') ||
+         contains(github.event.issue.labels.*.name, 'state:plan-review'))) ||
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
       (github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested')
     runs-on: ubuntu-latest
