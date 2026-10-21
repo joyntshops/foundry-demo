@@ -18,6 +18,10 @@ tmux_template: foundry-{issue}
 max_sessions: 4
 max_verify_parallel: 1
 verify: []
+# Run against the live GitHub Pages preview before a task is marked ready for review.
+verify_preview:
+  - 'curl -fsS "$FOUNDRY_PREVIEW_URL" | grep -q "<h1>Hello World"'
+  - 'curl -fsS "$FOUNDRY_PREVIEW_URL" | grep -c "<li>" | xargs test 1 -le'
 integration_rebuild: ""
 comment_triggers:
   replan: "@foundry replan"
