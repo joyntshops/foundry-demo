@@ -44,6 +44,10 @@ on:
         required: false
         type: string
         default: ""
+  # Reconcile: an in-progress issue whose run died without cleanup is marked
+  # failed once its status comment is older than reconcile_stale_minutes.
+  schedule:
+    - cron: '*/30 * * * *'
 
 permissions:
   contents: write        # push branches
@@ -71,7 +75,8 @@ jobs:
         (github.event.pull_request.merged == true ||
          github.event.pull_request.base.ref == 'main')) ||
       (github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested') ||
-      github.event_name == 'workflow_dispatch'
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -81,8 +86,9 @@ jobs:
     # At workflow level they would queue and cancel each other, and could
     # cancel a pending human command.
     concurrency:
-      group: foundry-${{ github.event.inputs.issue || github.event.issue.number || github.event.pull_request.number }}
-      cancel-in-progress: false
+      group: foundry-${{ github.event.inputs.issue || github.event.issue.number || github.event.pull_request.number || github.event_name }}
+      # `@foundry stop` cancels the issue's running job; everything else queues.
+      cancel-in-progress: ${{ github.event_name == 'issue_comment' && contains(github.event.comment.body, '@foundry stop') }}
 
     # Secrets can't be read in a step's `if:`; surface the (non-sensitive) App ID
     # so the token-minting step can be skipped when no App is configured.
