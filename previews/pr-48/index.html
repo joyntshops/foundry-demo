@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview PR #48</title>
+<style>
+  :root {
+    --bg: #eef1f6;
+    --card-bg: #ffffff;
+    --text: #1b1f27;
+    --text-muted: #6b7280;
+    --tile-bg: #f5f7fb;
+    --tile-bg-hover: #eaefff;
+    --border: #e3e7ee;
+    --accent: #2d6cdf;
+    --accent-text: #ffffff;
+    --footer-text: #9aa3b2;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10131a;
+      --card-bg: #1a1e27;
+      --text: #e7eaf0;
+      --text-muted: #9aa3b2;
+      --tile-bg: #222633;
+      --tile-bg-hover: #2a3042;
+      --border: #2b303d;
+      --accent: #5b8cf0;
+      --accent-text: #0e1320;
+      --footer-text: #5f6878;
+    }
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.25);
+  }
+
+  h1 {
+    margin: 0 0 24px;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.6em;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .greetings {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  @media (max-width: 480px) {
+    .greetings {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .greetings li {
+    background: var(--tile-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .greetings li:hover {
+    background: var(--tile-bg-hover);
+    transform: translateY(-2px);
+  }
+
+  .greeting-text {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .greeting-lang {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--text-muted);
+  }
+
+  footer {
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--footer-text);
+  }
+
+  footer p {
+    margin: 0;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Hello World <span class="badge">6</span></h1>
+    <ul class="greetings">
+      <li><span class="greeting-text">Hello World</span><em class="greeting-lang">English</em></li>
+      <li><span class="greeting-text">Hola Mundo</span><em class="greeting-lang">Spanish</em></li>
+      <li><span class="greeting-text">Hallo Welt</span><em class="greeting-lang">German</em></li>
+      <li><span class="greeting-text">こんにちは世界</span><em class="greeting-lang">Japanese</em></li>
+      <li><span class="greeting-text">Bonjour le Monde</span><em class="greeting-lang">French</em></li>
+      <li><span class="greeting-text">Olá Mundo</span><em class="greeting-lang">Portuguese</em></li>
+    </ul>
+    <footer>
+      <p><strong>PR:</strong> #48</p>
+      <p><strong>Branch:</strong> feature/47-add-a-portuguese-greeting</p>
+      <p><strong>SHA:</strong> dc8bd881dd4cf01eeeb9352b83a5b5a098f4c774</p>
+      <p><strong>Deployed:</strong> 2026-10-22T20:33:34Z</p>
+    </footer>
+  </div>
+</body>
+</html>
