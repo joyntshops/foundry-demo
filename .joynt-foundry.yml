@@ -10,11 +10,6 @@ mode_labels:
   plan: mode:plan
   auto: mode:auto
   default: mode:default
-# Exercise configurable branch names (foundry #20): `trunk` is a temporary
-# branch cut from integration; feature branches come from and go into it.
-branches:
-  integration: trunk
-  production: main
 branch_template: feature/{issue}-{slug}
 worktree_base: ./wts
 tmux_template: foundry-{issue}
