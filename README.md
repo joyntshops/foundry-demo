@@ -31,7 +31,7 @@ Not on this repository. Commenting `@foundry go` requires write access, and the 
 To run Foundry on a repository of your own:
 
 ```bash
-npx @joyntshops/foundry init
+npx @joynt/foundry init
 ```
 
 and follow [Onboarding](https://github.com/joyntshops/foundry/blob/main/docs/foundry/onboarding.md). You need a Claude subscription token (`claude setup-token`) and, in practice, a GitHub App so the PRs the agent opens get CI; `foundry setup-bot` creates one.
