@@ -1,0 +1,97 @@
+name: Publish Branch
+
+on:
+  push:
+    branches: [integration, main]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to publish (integration or main)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  publish-branch:
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: ${{ github.event.inputs.branch || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check branch
+        run: |
+          case "${BRANCH}" in
+            integration|main) ;;
+            *) echo "Only integration and main can be published, got: ${BRANCH}"; exit 1 ;;
+          esac
+
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref_name }}
+          path: source
+
+      - name: Checkout gh-pages branch (create if missing)
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+
+          if git ls-remote --exit-code --heads "${REMOTE}" gh-pages; then
+            git clone --branch gh-pages --single-branch "${REMOTE}" gh-pages-dir
+          else
+            mkdir gh-pages-dir
+            cd gh-pages-dir
+            git init
+            git remote add origin "${REMOTE}"
+            git checkout --orphan gh-pages
+            echo "<html><body><h1>Foundry Previews</h1></body></html>" > index.html
+            git add index.html
+            git commit -m "chore: initialize gh-pages branch"
+          fi
+
+      - name: Write page files (from template)
+        run: |
+          DEPLOY_SHA=$(git -C source rev-parse HEAD)
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          if [ "${BRANCH}" = "main" ]; then
+            PUBLISH_PATH="main/index.html"
+          else
+            PUBLISH_PATH="index.html"
+          fi
+          echo "PUBLISH_PATH=${PUBLISH_PATH}" >> "$GITHUB_ENV"
+          echo "DEPLOY_SHA=${DEPLOY_SHA}" >> "$GITHUB_ENV"
+
+          mkdir -p "gh-pages-dir/$(dirname "${PUBLISH_PATH}")"
+          sed \
+            -e "s|__PR__|${BRANCH}|g" \
+            -e "s|__BRANCH__|${BRANCH}|g" \
+            -e "s|__SHA__|${DEPLOY_SHA}|g" \
+            -e "s|__TIMESTAMP__|${TIMESTAMP}|g" \
+            source/index.html \
+            > "gh-pages-dir/${PUBLISH_PATH}"
+
+          # One-off cleanup of the directory left by a dispatch with an
+          # unexpanded input; a no-op once it is gone.
+          rm -rf "gh-pages-dir/previews/pr-{pr}"
+
+      - name: Commit and push to gh-pages
+        run: |
+          cd gh-pages-dir
+          git add "${PUBLISH_PATH}"
+          git add -A "previews/"
+          if git diff --cached --quiet; then
+            echo "No changes to commit (idempotent re-publish)"
+          else
+            git commit -m "publish: ${BRANCH} @ ${DEPLOY_SHA}"
+          fi
+          git push origin gh-pages
