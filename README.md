@@ -35,7 +35,7 @@ To run Foundry on a repository of your own:
 npx @joynt/foundry init
 ```
 
-and follow [Onboarding](https://github.com/joyntshops/foundry/blob/main/docs/foundry/onboarding.md). You need a Claude subscription token (`claude setup-token`) and the [public Foundry App](https://github.com/apps/joynt-foundry-bot-app/installations/new) installed on the repository, so the PRs the agent opens carry the App's name and get CI. No App key to store: the workflow exchanges the job's OIDC token for an App token at a broker joyntshops runs. Prefer not to depend on that broker? `foundry setup-bot` creates an App you own instead.
+and follow [Onboarding](https://github.com/joyntshops/foundry/blob/main/docs/foundry/onboarding.md). You need a Claude subscription token (`claude setup-token`) and the [public Foundry App](https://github.com/apps/joynt-foundry/installations/new) installed on the repository, so the PRs the agent opens carry the App's name and get CI. No App key to store: the workflow exchanges the job's OIDC token for an App token at a broker joyntshops runs. Prefer not to depend on that broker? `foundry setup-bot` creates an App you own instead.
 
 ## License
 
