@@ -27,7 +27,7 @@ Branch model: `integration` is the default branch and where task PRs land; `main
 
 ## Can I run it?
 
-Not on this repository. Commenting `@foundry go` requires write access, and the runs act as a GitHub App installed only on the `joyntshops` organization. Forking copies the files, not the App or the secrets.
+Not on this repository. Commenting `@foundry go` requires write access, and the runs act as the public Foundry GitHub App, which is installed here and hands each job a token scoped to this repository only. Forking copies the files, not the installation or the Claude token.
 
 To run Foundry on a repository of your own:
 
@@ -35,7 +35,7 @@ To run Foundry on a repository of your own:
 npx @joynt/foundry init
 ```
 
-and follow [Onboarding](https://github.com/joyntshops/foundry/blob/main/docs/foundry/onboarding.md). You need a Claude subscription token (`claude setup-token`) and, in practice, a GitHub App so the PRs the agent opens get CI; `foundry setup-bot` creates one.
+and follow [Onboarding](https://github.com/joyntshops/foundry/blob/main/docs/foundry/onboarding.md). You need a Claude subscription token (`claude setup-token`) and the [public Foundry App](https://github.com/apps/joynt-foundry/installations/new) installed on the repository, so the PRs the agent opens carry the App's name and get CI. No App key to store: the workflow exchanges the job's OIDC token for an App token at a broker joyntshops runs. Prefer not to depend on that broker? `foundry setup-bot` creates an App you own instead.
 
 ## License
 
