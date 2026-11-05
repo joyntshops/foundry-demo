@@ -6,7 +6,7 @@ A tiny static page that exists to be changed by a coding agent. This repository 
 
 - **`index.html`** is a one-page list of "Hello World" in several languages. It prints the pull request number and commit it was built from, so a preview can be checked against the PR that produced it. Two live copies are published on every push: <https://joyntshops.github.io/foundry-demo/> is `integration`, where task PRs land, and <https://joyntshops.github.io/foundry-demo/main/> is `main`, production.
 - **[Issues](../../issues?q=is%3Aissue)** were written by a person. Each one is a task: "add a Portuguese greeting", "give the page a modern look". A comment of `@foundry go` started the agent.
-- **[Pull requests](../../pulls?q=is%3Apr)** opened by `foundry-bot-joyntshops` were written by the agent. Read one end to end: the claim comment on the issue, the status comment that records every transition, the PR, the preview link, the approval, and the merge Foundry performed.
+- **[Pull requests](../../pulls?q=is%3Apr)** opened by `joynt-foundry[bot]` were written by the agent (the older ones carry `foundry-bot-joyntshops`, the App this repository used before the public one). Read one end to end: the claim comment on the issue, the status comment that records every transition, the PR, the preview link, the approval, and the merge Foundry performed.
 - **[Actions](../../actions)** holds every run. One run is one GitHub event: a comment, a review, a merge. The agent's transcript is the job log and is uploaded as an artifact.
 - **`gh-pages`** holds the previews: `previews/pr-<n>/` for each PR while it is open, torn down on merge. It also holds the published `integration` (root) and `main` (`/main/`) pages.
 
